@@ -16,6 +16,7 @@
       display: block;
       background-color: #000;
       cursor: crosshair;
+      touch-action: none;
     }
 
     .controls {
@@ -130,6 +131,32 @@
     canvas.addEventListener('mouseup', stopDraw);
     canvas.addEventListener('mousemove', draw);
 
+    // Mobile touch support
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      simulateMouseEvent('mousedown', touch);
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      simulateMouseEvent('mousemove', touch);
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      simulateMouseEvent('mouseup', {});
+    });
+
+    function simulateMouseEvent(type, touch) {
+      const mouseEvent = new MouseEvent(type, {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }
+
     function startDraw(e) {
       isDrawing = true;
     }
@@ -160,40 +187,26 @@
           case 'chalk':
             ctx.strokeStyle = hexToRGBA(chalkColor, 0.15);
             ctx.lineWidth = chalkSize + Math.random();
-            ctx.beginPath();
-            ctx.moveTo(prevX, prevY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
             break;
-
           case 'soft':
             ctx.strokeStyle = hexToRGBA(chalkColor, 0.08);
             ctx.lineWidth = chalkSize * 2;
-            ctx.beginPath();
-            ctx.moveTo(prevX, prevY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
             break;
-
           case 'pencil':
             ctx.strokeStyle = chalkColor;
             ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(prevX, prevY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
             break;
-
           case 'marker':
             ctx.strokeStyle = chalkColor;
             ctx.lineCap = 'butt';
             ctx.lineWidth = chalkSize * 2;
-            ctx.beginPath();
-            ctx.moveTo(prevX, prevY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
             break;
         }
+
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
       } else if (mode === 'erase') {
         ctx.strokeStyle = '#000';
         ctx.lineWidth = eraserSize;
@@ -236,8 +249,6 @@
 
     toolSelect.onchange = (e) => {
       tool = e.target.value;
-
-      // Auto change size when tool changes
       switch (tool) {
         case 'chalk': chalkSize = 4; break;
         case 'soft': chalkSize = 10; break;
